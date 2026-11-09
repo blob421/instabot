@@ -3,6 +3,7 @@ from playwright.async_api import async_playwright
 import asyncio
 import os 
 import json
+import random
 
 CURRENT_DIR = os.path.dirname(__file__)
 
@@ -80,6 +81,7 @@ class WebClient():
         followers_link = self.page.locator('a[role="link"][href="#"]')
 
         await followers_link.nth(5).click()
+        await asyncio.sleep(2)
 
         scroll_div = self.page.locator('div[style="--x-paddingInline: 48px; --x-paddingBottom: 28px;"]')
 
@@ -87,11 +89,13 @@ class WebClient():
 
 
     async def get_followers(self, scrollable_element):
-        height = await scrollable_element.evaluate('(el) => el.clientHeight')
+        height = await scrollable_element.evaluate('(el) => el.clientHeight') + 100
+        initial_height = height
+        tries = 0
 
         while True:
 
-            await scrollable_element.evaluate(f'(el) => el.scrollTop += {height}')
+            await scrollable_element.evaluate(f'(el) => el.scrollTop = {height}')
 
             followers = self.page.locator('span[class="_ap3a _aaco _aacw _aacx _aad7 _aade"]')
             data = await followers.all()
@@ -100,12 +104,17 @@ class WebClient():
                 self.followers.add(await f.inner_text())
 
             if self.previous_len and self.previous_len == len(self.followers):
-                print('Finished getting all followers from target...')
-                return 
+
+                tries += 1
+                if tries == 4:
+                   print('Finished getting all followers from target...')
+                   return 
+            else:
+                tries = 0
             
             self.previous_len = len(self.followers)
-            height += height
-            await asyncio.sleep(2)
+            height += initial_height
+            await asyncio.sleep(random.uniform(3, 3.5))
     
             
     def export(self):

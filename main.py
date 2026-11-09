@@ -13,11 +13,11 @@ async def main():
    
     await client.start()
     await asyncio.sleep(4)
-    
+
     await client.start_login()
     await client.wait_for_2fa()
     await client.explore_profile()
-    await client.export()
+    client.export()
 
     await client.stop()
     
