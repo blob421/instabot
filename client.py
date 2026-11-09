@@ -25,7 +25,7 @@ class WebClient():
     async def start(self):
         self.target = self.creds.get("target") or input('Enter a target username : ')
         self.client = await async_playwright().start()
-        self.driver = await self.client.chromium.launch(headless=False)
+        self.driver = await self.client.chromium.launch(headless=False, channel='chromium')
 
         self.page = await self.driver.new_page()
         await self.page.goto(self.main_url)
@@ -37,18 +37,45 @@ class WebClient():
         await self.client.stop()
 
     async def start_login(self):
+
         try:
-            email_field = self.page.locator('input[name="email"]') 
-            await email_field.type(self.creds.get('username'))
+            continue_button = self.page.locator('div[aria-label^="Continue"]')
 
-            password_field = self.page.locator('input[name="pass"]')
-            await password_field.type(self.creds.get('password'))
-        
+            try:
+                await continue_button.wait_for(timeout=2000, state='visible')
+                await continue_button.click()
+                return
+            
+            except:
+            
+                email_field = self.page.locator('input[name="email"]') 
+                await email_field.type(self.creds.get('username'))
 
-            login_btn = self.page.locator('div[aria-label="Log In"]')
-            await login_btn.click()
+                password_field = self.page.locator('input[name="pass"]')
+                await password_field.type(self.creds.get('password'))
+            
+
+                login_btn = self.page.locator('div[aria-label="Log In"]')
+                await login_btn.click()
       
+            try:
+                await asyncio.sleep(5)
+                continue_button = self.page.locator('div[aria-label^="Continue"]')
+                await continue_button.wait_for(timeout=2000, state='visible')
+                await continue_button.click()
+                await asyncio.sleep(1)
 
+                password_field = self.page.locator('input[name="pass"]')
+                await password_field.type(self.creds.get('password'))
+                await asyncio.sleep(3)
+
+                second_login = self.page.locator('div[class="button"]')
+                await second_login.wait_for(state='visible', timeout=2000)
+                await second_login.click()
+                
+            except:
+                pass
+            
         except Exception as e:
             print(e)
 
@@ -90,7 +117,7 @@ class WebClient():
 
     async def get_followers(self, scrollable_element):
         height = await scrollable_element.evaluate('(el) => el.clientHeight') + 100
-        initial_height = height
+        initial_height = height - 100
         tries = 0
 
         while True:
@@ -122,5 +149,21 @@ class WebClient():
 
             json.dump(list(self.followers), f, indent=4)
         print(len(self.followers))
+
+
+    async def follow_users(self, usernames:list, limit:int):
+
+        for idx, u in enumerate(usernames):
+
+            if idx > limit: return
+
+            await self.page.goto(self.main_url + u)
+
+            follow_button = self.page.locator('button[type="button"]')
+
+            if follow_button:
+                await follow_button.click()
+
+            await asyncio.sleep(random.uniform(2,4))
 
 
