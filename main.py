@@ -70,7 +70,7 @@ async def follow(webclient):
     with open(os.path.join(CURRENT_DIR, 'exports', datasets[index])) as f:
         data = json.load(f)
 
-    await webclient.follow_users(data, limit=1)
+    await webclient.follow_users(data, limit=0)
 
 
 

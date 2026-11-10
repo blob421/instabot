@@ -17,6 +17,7 @@ class WebClient():
         self.page = None
         self.creds:dict = creds
         self.target = None
+        self.context = None
         self.followers = set()
         self.previous_len = 0
         
@@ -27,7 +28,8 @@ class WebClient():
         self.client = await async_playwright().start()
         self.driver = await self.client.chromium.launch(headless=False, channel='chromium')
 
-        self.page = await self.driver.new_page()
+        self.context = await self.driver.new_context()
+        self.page = await self.context.new_page()
         await self.page.goto(self.main_url)
        
 
